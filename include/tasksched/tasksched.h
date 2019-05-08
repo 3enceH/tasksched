@@ -74,6 +74,7 @@ namespace tsch
         virtual void execute() = 0;
         virtual void set_iomanager(iomanager * manager) { m_io_manager = manager; }
         virtual void set_name(const std::string & name) { m_name = name; }
+        virtual void bind_to_thread(bool value) { m_bound_to_thread = value; }
         const std::string & get_name() const { return m_name; }
         void set_priority(int32_t priority) { m_priority = priority; }
         int32_t priority() { return m_priority; }
@@ -81,11 +82,13 @@ namespace tsch
         friend class threadsched;
         void set_task_id(int32_t t_id) { m_task_id = t_id; }
         int32_t task_id() { assert(m_task_id != -1); return m_task_id; };
+        bool is_bound_to_thread() { return m_bound_to_thread; }
     protected:
         iomanager * m_io_manager = nullptr;
         int32_t m_task_id = -1;
         int32_t m_priority = -1;
         std::string m_name;
+        bool m_bound_to_thread = false;
     };
 
 
@@ -110,6 +113,7 @@ namespace tsch
         std::map<int32_t, std::vector<int32_t>> m_deps_ready;
         std::map<int32_t, std::vector<int32_t> > m_forward_deps;
         std::map<int32_t, std::vector<int32_t> > m_backward_deps;
+        std::map<int32_t, int32_t> m_bound_tasks;
         //std::
         static int32_t s_task_id;
         std::mutex m_task_queue_mutex;

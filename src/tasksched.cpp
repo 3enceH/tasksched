@@ -34,7 +34,17 @@ namespace tsch
                     if (!m_task_queue.empty())
                     {
                         to_execute = m_task_queue.top();
-                        m_task_queue.pop();
+
+                        // if bound to any thread but not to this one, drop task
+                        auto & it = m_bound_tasks.find(to_execute->task_id());
+                        if (it != m_bound_tasks.end() && it->second != th_id) 
+                        {
+                            to_execute = nullptr;
+                        }
+                        else
+                        {
+                            m_task_queue.pop();
+                        }
                     }
                     else
                     {
@@ -51,14 +61,25 @@ namespace tsch
                     t.end = std::chrono::steady_clock::now();
                     t.group = std::to_string(th_id);
                     m_timestamps[to_execute->get_name()].emplace_back(t);
-                    //printf("Task executed: %s \n", to_execute->get_name().c_str());
+                    //printf("Task %s executed by thread %d\n", to_execute->get_name().c_str(), th_id);
                     update_queue(to_execute);
 
                 }
             }
         };
 
+        // bounding tasks to threads
         int th_id = 0;
+        m_bound_tasks.clear();
+        for (auto & task : m_tasks)
+        {
+            if (task->is_bound_to_thread())
+            {
+                m_bound_tasks[task->task_id()] = th_id++ % m_workers.size();
+            }
+        }
+
+        th_id = 0;
         for (auto & th : m_workers)
         {
             th = std::thread(a, th_id);
